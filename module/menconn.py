@@ -1,6 +1,7 @@
 from operator import itemgetter
 import numpy as np
 import re
+import MeCab
 
 def mention_index(ts, ss, sep=' '):
     con = [[] for t in ts]
@@ -95,8 +96,19 @@ def build_sentences(ss, slist, sep=' '):
         sentences.append(line)
     return sentences
 
-def run(ts, ss):
-    return build_sentences(ss, index_in_sentence(mention_index(ts, ss)))
+def mecab_tokenize(sentence):
+    tagger = MeCab.Tagger("-Owakati")
+    return tagger.parse(sentence).split()
+
+def run(ts, ss, sep=' '):
+    return build_sentences(ss, index_in_sentence(mention_index(ts, ss, sep=sep)), sep=sep)
+
+def ja_tokenize(sentence, ts, tokenize=mecab_tokenize):
+    ss = tokenize(sentence)
+    result = []
+    for d in run(ts, ss, sep=''):
+        result += d
+    return result
 
 def en_tokenize(sentence, ts):
     ss = re.sub(r"[^\w ]", '', sentence).lower().split()
@@ -106,14 +118,17 @@ def en_tokenize(sentence, ts):
     return result
 
 if __name__ == '__main__':
-    ts = ['street', 'street musician', 'musician at japan', 'japan']
-    ss = 'he is a street musician at japan'.split()
+    #ts = ['street', 'street musician', 'musician at japan', 'japan']
+    #ss = 'he is a street musician at japan'.split()
+    ts = ['ボディー', 'ボディービルダー', '日本','日本人', '大学', '大学生', '日本人大学生']
+    ss = '彼は ボディー ビルダー を やって いる 一人 の 日本 人 大学 生 です'.split()
+    sentence = '彼はボディー ビルダーをやっている一人の日本人大学生です'
 
-    con = mention_index(ts, ss)
+    con = mention_index(ts, ss, '')
     slist = index_in_sentence(con)
 
     print(con)
     print(slist)
     print(build_sentence(ss, slist[0]))
-    print(build_sentences(ss, slist))
-    
+    print(build_sentences(ss, slist, ''))
+    print(ja_tokenize(sentence, ts))
