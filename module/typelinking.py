@@ -70,11 +70,14 @@ def solve_model_probs(sentence, tagger, tokenize=simple_tokenize):
     return sent_splits, model_probs
 
 def solve_type_probs(mention, sent_splits, model_probs, type_oracle, indices, alpha_type_belief=0.5):
-    token_location = sent_splits.index(mention)
-    type_belief = model_probs[token_location]
-    assignments = type_oracle.classify(indices)
-    type_probs = type_belief[assignments]
-    type_probs = alpha_type_belief * type_probs + (1.0 - alpha_type_belief)
+    try:
+        token_location = sent_splits.index(mention)
+        type_belief = model_probs[token_location]
+        assignments = type_oracle.classify(indices)
+        type_probs = type_belief[assignments]
+        type_probs = alpha_type_belief * type_probs + (1.0 - alpha_type_belief)
+    except ValueError:
+        type_probs = None
     return type_probs
 
 def solve_full_score(link_probs, type_probs, beta=0.99):
@@ -95,8 +98,11 @@ def run(mentions, sent_splits, model_probs,  indices2title, type_oracle, trie, t
                 full_score = link_probs
             else:
                 type_probs = solve_type_probs(mention, sent_splits, model_probs, type_oracle, indices)
-                full_score = solve_full_score(link_probs, type_probs)
-            entity = pick_top_entity(full_score, indices, indices2title)
+                if type_probs is not None:
+                    full_score = solve_full_score(link_probs, type_probs)
+                    entity = pick_top_entity(full_score, indices, indices2title)
+                else:
+                    entity = None
         else:
             entity = None
         entities.append(entity)
