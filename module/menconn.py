@@ -103,7 +103,20 @@ def mecab_tokenize(sentence):
 def run(ts, ss, sep=' '):
     return build_sentences(ss, index_in_sentence(mention_index(ts, ss, sep=sep)), sep=sep)
 
+def replace_mulalpha(sentence):
+    mul_alpha = list('ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ')
+    sin_alpha = list('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz')
+    characters = list(sentence)
+    stack = []
+    for c in characters:
+        if c in mul_alpha:
+            stack.append(sin_alpha[mul_alpha.index(c)])
+        else:
+            stack.append(c)
+    return ''.join(stack)           
+
 def ja_tokenize(sentence, ts, tokenize=mecab_tokenize):
+    sentence = replace_mulalpha(sentence).lower()
     ss = tokenize(sentence)
     result = []
     for d in run(ts, ss, sep=''):
@@ -122,7 +135,7 @@ if __name__ == '__main__':
     #ss = 'he is a street musician at japan'.split()
     ts = ['ボディー', 'ボディービルダー', '日本','日本人', '大学', '大学生', '日本人大学生']
     ss = '彼は ボディー ビルダー を やって いる 一人 の 日本 人 大学 生 です'.split()
-    sentence = '彼はボディー ビルダーをやっている一人の日本人大学生です'
+    sentence = '彼はボディービルダーをやっている一人の日本人大学生です'
 
     con = mention_index(ts, ss, '')
     slist = index_in_sentence(con)
