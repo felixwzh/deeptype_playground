@@ -111,7 +111,7 @@ def ja_tokenize(sentence, ts, tokenize=mecab_tokenize):
     return result
 
 def en_tokenize(sentence, ts):
-    ss = re.sub(r"[^\w ]", '', sentence).lower().split()
+    ss = sentence.lower().split()
     result = []
     for d in run(ts, ss):
         result += d

@@ -2,6 +2,7 @@ import sys
 import os
 dataroot = os.path.join(os.path.dirname(__file__), '../')
 sys.path.append(os.path.join(dataroot, "learning/"))
+sys.path.append(os.path.join(dataroot, "module/"))
 
 import time
 import marisa_trie
@@ -12,6 +13,17 @@ import train_type as tp
 from collections import defaultdict
 from tqdm import tqdm
 import re
+import menconn
+from functools import partial
+
+def load_settings(dataroot, lang='en'):
+    tagger = tp.SequenceTagger(os.path.join(dataroot,'en_model/'))
+    type_oracle = load_oracle_classification(os.path.join(dataroot, "data/classifications/type_classification"))
+    trie_index2indices_values, trie_index2indices_counts, trie = load_trie(os.path.join(dataroot, 'data/{}_trie'.format(lang)))
+    with open(os.path.join(dataroot, 'data/wikidata/indices2title.pkl'), 'rb') as hdl:
+        indices2title = pickle.load(hdl)
+    return tagger, indices2title, type_oracle, trie, trie_index2indices_values, trie_index2indices_counts
+
 
 def create_indices2title(infile, outfile):
     out = defaultdict(list)
@@ -96,6 +108,7 @@ def run(mentions, sent_splits, model_probs,  indices2title, type_oracle, trie, t
         if indices is not None:
             if only_link:
                 full_score = link_probs
+                entity = pick_top_entity(full_score, indices, indices2title)
             else:
                 type_probs = solve_type_probs(mention, sent_splits, model_probs, type_oracle, indices)
                 if type_probs is not None:
@@ -108,16 +121,26 @@ def run(mentions, sent_splits, model_probs,  indices2title, type_oracle, trie, t
         entities.append(entity)
     return entities
 
-if __name__ == '__main__':
-    global dataroot
-    tagger = tp.SequenceTagger(os.path.join(dataroot,'my_great_model/'))
-    with open(os.path.join(dataroot, 'data/wikidata/indices2title.pkl'), 'rb') as hdl:
-        indices2title = pickle.load(hdl)
-    sentence = "The prey saw the jaguar cross the jungle"
-    sent_splits, model_probs = solve_model_probs(sentence, tagger)
-    mentions = ["jaguar", "jungle"]
-    type_oracle = load_oracle_classification(os.path.join(dataroot, "data/classifications/type_classification"))
-    trie_index2indices_values, trie_index2indices_counts, trie = load_trie(os.path.join(dataroot, 'data/en_trie'))
-    entities = run(mentions, sent_splits, model_probs, indices2title, type_oracle, trie, trie_index2indices_values, trie_index2indices_counts)
-    print(entities)
+def analyze(sentence, ts, tokenize, tagger, indices2title, type_oracle, trie, trie_index2indices_values, trie_index2indices_counts, lang='en'):
+    if not ts:
+        return []
+    sent_splits, model_probs = solve_model_probs(sentence, tagger, tokenize=tokenize)
+    entities = run(ts, sent_splits, model_probs, indices2title, type_oracle, trie, trie_index2indices_values, trie_index2indices_counts)
+    preds = []
+    for entity in entities:
+        if entity is not None:
+            preds.append(entity[lang])
+        else:
+            preds.append(None)
+    return [{'mention':x, 'pred': y} for x,y in zip(ts, preds)]
 
+if __name__ == '__main__':
+    ts = ['jaguar']
+    tokenize = partial(menconn.en_tokenize, ts=ts)
+    settings = load_settings('..')
+    
+    sentence = "The man saw a Jaguar speed on the highway"
+    print(analyze(sentence, ts, tokenize, *settings))
+
+    sentence = "The prey saw the jaguar cross the jungle"
+    print(analyze(sentence, ts, tokenize, *settings))
