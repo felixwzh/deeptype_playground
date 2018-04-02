@@ -104,8 +104,8 @@ def run(ts, ss, sep=' '):
     return build_sentences(ss, index_in_sentence(mention_index(ts, ss, sep=sep)), sep=sep)
 
 def replace_mulalpha(sentence):
-    mul_alpha = list('ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ')
-    sin_alpha = list('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz')
+    mul_alpha = list('０１２３４５６７８９ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ')
+    sin_alpha = list('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz')
     characters = list(sentence)
     stack = []
     for c in characters:
@@ -131,17 +131,10 @@ def en_tokenize(sentence, ts):
     return result
 
 if __name__ == '__main__':
-    #ts = ['street', 'street musician', 'musician at japan', 'japan']
-    #ss = 'he is a street musician at japan'.split()
     ts = ['ボディー', 'ボディービルダー', '日本','日本人', '大学', '大学生', '日本人大学生']
-    ss = '彼は ボディー ビルダー を やって いる 一人 の 日本 人 大学 生 です'.split()
     sentence = '彼はボディービルダーをやっている一人の日本人大学生です'
-
-    con = mention_index(ts, ss, '')
-    slist = index_in_sentence(con)
-
-    print(con)
-    print(slist)
-    print(build_sentence(ss, slist[0]))
-    print(build_sentences(ss, slist, ''))
     print(ja_tokenize(sentence, ts))
+
+    ts = ['street', 'street musician', 'musician at japan', 'japan']
+    sentence = 'he is a street musician at japan'
+    print(en_tokenize(sentence, ts))

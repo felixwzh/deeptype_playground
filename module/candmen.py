@@ -1,0 +1,46 @@
+from functools import partial
+import itertools
+from nltk import ngrams
+from nltk.corpus import stopwords
+import os
+
+def parse_tokenize(sentence, mtag):
+    sentence_parsed = mtag.parse(sentence)
+    return sentence_parsed.split()
+
+def get_japanese_stopwords():
+    stps = stopwords.words('japanese')
+    return stps + [''.join(list(stp)) for stp in list(itertools.product(stps, stps))]
+
+def get_candidate_mentions(sentence, tokenize, trie, stps=[], sep=' '):
+    sentence_parsed = tokenize(sentence)
+    ts = []
+    for n in range(1, 10):
+        n_grams = ngrams(sentence_parsed, n)
+        for grams in n_grams:
+            ts.append(sep.join(list(grams)))
+    return [t for t in ts if trie.get(t) is not None and t not in stps]
+
+if __name__ == "__main__":
+    dataroot = '..'
+
+    import sys
+    sys.path.append(os.path.join(dataroot, "module"))
+    from typelinking import *
+    import MeCab
+
+    settings = load_settings('..', 'ja')
+    trie = settings[3]
+    mtag = MeCab.Tagger('-Owakati')
+    sentence = """
+バラク・オバマは基本的に言ってインテリ層に人気のある黒人だったが、
+ドナルド・トランプは白人主義者や陰謀論者から人気を集めている。
+"""
+    stps = get_japanese_stopwords()
+    tokenize = partial(parse_tokenize, mtag=mtag)
+
+    start = time.time()
+    ts = get_candidate_mentions(sentence, tokenize, trie, stps, sep='')
+    end = time.time()
+    print('Time:{}'.format(end-start))
+    print(ts)
