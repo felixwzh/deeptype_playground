@@ -26,7 +26,7 @@ def load_settings(dataroot, lang='en'):
 
 
 def create_indices2title(infile, outfile):
-    out = defaultdict(list)
+    out = defaultdict(dict)
     with open(infile) as f:
         for line in tqdm(f):
             it = line.replace('\n', '').split('\t')
